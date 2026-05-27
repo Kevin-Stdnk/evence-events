@@ -1,0 +1,316 @@
+<app-header></app-header>
+
+<!-- Conteúdo -->
+<main class="detalhes-main">
+  <!-- Banner de Administração (Só aparece em modoAdmin) -->
+  <div class="admin-banner" *ngIf="modoAdmin">
+    <div class="admin-banner__container">
+      <div class="admin-banner__info">
+        <span class="material-icons">visibility</span>
+        <div>
+          <strong>Modo de Curadoria</strong>
+          <p>Analisando solicitação de publicação.</p>
+        </div>
+      </div>
+      <div class="admin-banner__actions">
+        <button class="btn-banner btn-banner--reject" (click)="reprovar()" [disabled]="processando">
+          <span class="material-icons">close</span>
+          Reprovar
+        </button>
+        <button class="btn-banner btn-banner--approve" (click)="aprovar()" [disabled]="processando">
+          <span class="material-icons">check</span>
+          Aprovar Publicação
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" *ngIf="carregando">
+    <div class="spinner"></div>
+    <p>Buscando detalhes do evento...</p>
+  </div>
+
+  <!-- Erro -->
+  <div class="erro" *ngIf="erro">
+    <span class="material-icons" style="font-size: 4rem; color: #ff5252;">error_outline</span>
+    <h2>Evento não encontrado</h2>
+    <p>O evento que você está procurando não existe ou foi removido.</p>
+    <a routerLink="/eventos" style="color: var(--cor-primaria); font-weight: bold; text-decoration: none;">Voltar para lista de eventos</a>
+  </div>
+
+  <!-- Evento -->
+  <div class="evento-wrapper" *ngIf="!carregando && !erro && evento">
+    
+    <!-- Hero Section com Carrossel -->
+    <section class="detalhes-hero">
+      <!-- Imagens do Slider -->
+      <div class="detalhes-hero__slider">
+        <div 
+          class="slider-item" 
+          *ngFor="let img of evento.imagens; let i = index"
+          [class.active]="i === imagemAtivaIndex"
+          [style.background-image]="'url(' + img + ')'">
+        </div>
+      </div>
+
+      <div class="detalhes-hero__overlay"></div>
+      
+      <div class="detalhes-hero__container">
+        <div class="detalhes-hero__conteudo">
+          <div class="detalhes-hero__badges">
+            <span class="badge badge--destaque" *ngIf="evento.destaque">
+              <span class="material-icons">star</span> Destaque
+            </span>
+            <span class="badge badge--esgotado" *ngIf="evento.esgotado">
+              Esgotado
+            </span>
+          </div>
+          <h1 class="detalhes-hero__titulo">{{ evento.titulo }}</h1>
+          <div class="detalhes-hero__info-rapida">
+            <span class="info-item">
+              <span class="material-icons">calendar_today</span>
+              {{ evento.data }} às {{ evento.horario }}
+            </span>
+            <span class="info-item">
+              <span class="material-icons">location_on</span>
+              {{ evento.cidade }}, {{ evento.estado }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Indicadores (Dots) -->
+      <div class="detalhes-hero__dots" *ngIf="evento.imagens && evento.imagens.length > 1">
+        <button 
+          *ngFor="let img of evento.imagens; let i = index" 
+          class="dot" 
+          [class.active]="i === imagemAtivaIndex"
+          (click)="irParaImagem(i)"
+          [title]="'Ver imagem ' + (i + 1)">
+        </button>
+      </div>
+    </section>
+
+    <!-- Conteúdo Principal -->
+    <div class="detalhes-layout">
+      <div class="detalhes-layout__container">
+        <div class="detalhes-layout__grid">
+          
+          <!-- Lado Esquerdo: Info Detalhada -->
+          <div class="detalhes-corpo">
+            <section class="info-secao">
+              <h2 class="info-secao__titulo">Sobre o Evento</h2>
+              <p class="info-secao__texto" *ngIf="evento.descricaoLonga">
+                {{ evento.descricaoLonga }}
+              </p>
+              <p class="info-secao__texto" *ngIf="!evento.descricaoLonga">
+                Prepare-se para uma experiência única! O {{ evento.titulo }} traz o melhor do entertainment para {{ evento.cidade }}. Garanta seu lugar e não fique de fora deste grande acontecimento.
+              </p>
+            </section>
+
+            <section class="info-secao">
+              <h2 class="info-secao__titulo">Informações Importantes</h2>
+              <div class="info-detalhes">
+                <div class="info-card">
+                  <span class="material-icons info-card__icone">place</span>
+                  <div class="info-card__texto">
+                    <h3>Localização</h3>
+                    <p>{{ evento.local }}</p>
+                    <p>{{ evento.cidade }}, {{ evento.estado }}</p>
+                  </div>
+                </div>
+                <div class="info-card">
+                  <span class="material-icons info-card__icone">category</span>
+                  <div class="info-card__texto">
+                    <h3>Categoria</h3>
+                    <p style="text-transform: capitalize;">{{ evento.categoria }}</p>
+                  </div>
+                </div>
+                <div class="info-card">
+                  <span class="material-icons info-card__icone">schedule</span>
+                  <div class="info-card__texto">
+                    <h3>Data e Horário</h3>
+                    <p>{{ evento.data }}</p>
+                    <p>Abertura dos portões: {{ evento.horario }}</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Política de Reembolso -->
+            <section class="info-secao" *ngIf="evento.politicaReembolso">
+              <h2 class="info-secao__titulo">
+                <span class="material-icons" style="vertical-align: middle; margin-right: 8px; color: var(--cor-primaria);">autorenew</span>
+                Política de Reembolso
+              </h2>
+              <p class="info-secao__texto">
+                {{ evento.politicaReembolso }}
+              </p>
+            </section>
+
+            <!-- Galeria de Imagens -->
+            <section class="info-secao galeria-secao" *ngIf="evento.imagens && evento.imagens.length > 1">
+              <h2 class="info-secao__titulo">
+                <span class="material-icons">photo_library</span>
+                Galeria de Fotos
+              </h2>
+              <div class="galeria-grid">
+                <div class="galeria-item" *ngFor="let img of evento.imagens | slice:1" (click)="abrirModal(img)">
+                  <img [src]="img" alt="Foto do evento" loading="lazy" />
+                  <div class="galeria-item__overlay">
+                    <span class="material-icons">fullscreen</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Lado Direito: Card de Compra (Sticky) -->
+          <aside class="detalhes-sidebar">
+            <div class="checkout-card" [class.checkout-card--preview]="modoAdmin">
+              <div class="checkout-card__cabecalho" *ngIf="!modoAdmin">
+                <span class="checkout-card__label">{{ evento.tipoIngresso === 'gratuito' ? 'Ingresso' : 'Ingressos a partir de' }}</span>
+                <span class="checkout-card__preco">{{ formatarPreco(loteSelecionado ? loteSelecionado.preco : evento.precoMinimo) }}</span>
+              </div>
+
+              <!-- Modo Público: Fluxo de Compra -->
+              <div class="checkout-card__corpo" *ngIf="!evento.esgotado && !modoAdmin">
+              
+                <!-- Seleção de Lote -->
+                <div class="seletor-lotes" *ngIf="evento.lotes && evento.lotes.length > 0 && evento.tipoIngresso !== 'gratuito'" style="margin-bottom: 20px;">
+                  <span class="seletor-quantidade__label" style="display:block; margin-bottom: 8px; font-weight: 700;">Selecione o Lote</span>
+                  <select class="lote-select" [(ngModel)]="loteSelecionado" style="width: 100%; padding: 12px 16px; border-radius: var(--raio-md); border: 1px solid var(--cor-borda); font-family: inherit; font-size: 0.95rem; font-weight: 600; color: var(--cor-texto-principal); background-color: var(--cor-fundo); outline: none; cursor: pointer;">
+                    <option *ngFor="let lote of evento.lotes" [ngValue]="lote">
+                      {{ lote.nome }} — {{ formatarPreco(lote.preco) }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="seletor-quantidade">
+                  <span class="seletor-quantidade__label">Quantidade de ingressos</span>
+                  <div class="seletor-quantidade__controles">
+                    <button class="btn-qty" (click)="diminuirQuantidade()" [disabled]="quantidade <= 1">
+                      <span class="material-icons">remove</span>
+                    </button>
+                    <span class="qty-valor">{{ quantidade }}</span>
+                    <button class="btn-qty" (click)="aumentarQuantidade()" [disabled]="quantidade >= 10">
+                      <span class="material-icons">add</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Barra de Progresso de Vendas -->
+                <div class="checkout-vendas" style="margin-bottom: 24px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; color: var(--cor-texto-terciario); margin-bottom: 8px;">
+                    <span>Ingressos Vendidos</span>
+                    <span>{{ evento.vendidos || 0 }} / {{ evento.totalIngressos }}</span>
+                  </div>
+                  <div class="vendas-progresso" style="margin-top: 0; height: 10px;">
+                    <div class="vendas-progresso__fill" [style.width.%]="((evento.vendidos || 0) / (evento.totalIngressos || 1)) * 100"></div>
+                  </div>
+                </div>
+
+                <div class="total-resumo">
+                  <span class="total-resumo__label">Total</span>
+                  <span class="total-resumo__valor">{{ formatarPreco((loteSelecionado ? loteSelecionado.preco : evento.precoMinimo) * quantidade) }}</span>
+                </div>
+
+                <button class="btn-comprar" (click)="adicionarAoCarrinho()">
+                  Adicionar ao Carrinho
+                  <span class="material-icons">shopping_cart</span>
+                </button>
+              </div>
+
+              <!-- Modo Admin: Aviso de Prévia -->
+              <div class="preview-notice" *ngIf="modoAdmin">
+                <div class="preview-notice__status">
+                  <span class="material-icons">info</span>
+                  <p>Vendas bloqueadas em curadoria.</p>
+                </div>
+
+                <div class="lotes-admin" *ngIf="evento.lotes && evento.lotes.length > 0 && evento.tipoIngresso !== 'gratuito'">
+                  <h4 class="lotes-admin__titulo">Lotes Cadastrados</h4>
+                  <ul class="lotes-admin__lista">
+                    <li class="lote-item-admin" *ngFor="let lote of evento.lotes">
+                      <div class="lote-item-admin__info">
+                        <span class="lote-item-admin__nome">{{ lote.nome }}</span>
+                        <span class="lote-item-admin__qtd">{{ lote.quantidade }} ingressos</span>
+                      </div>
+                      <span class="lote-item-admin__preco">{{ formatarPreco(lote.preco) }}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="checkout-card__esgotado" *ngIf="evento.esgotado && !modoAdmin">
+                <span class="material-icons">error_outline</span>
+                <p>Este evento está com ingressos esgotados.</p>
+                <button class="btn-voltar" routerLink="/eventos">Ver outros eventos</button>
+              </div>
+            </div>
+
+            <!-- Card do Produtor -->
+            <div class="produtor-card" *ngIf="produtor">
+              <div class="produtor-card__header">
+                <div class="avatar-prod">
+                  {{ produtor.nomeEmpresa ? produtor.nomeEmpresa.substring(0, 1) : produtor.nome.substring(0, 1) }}
+                </div>
+                <div class="prod-info">
+                  <span class="prod-label">Organizado por</span>
+                  <h3 class="prod-nome">{{ produtor.nomeEmpresa || produtor.nome }}</h3>
+                  <div class="prod-tipo" *ngIf="produtor.verificado">
+                    <span class="material-icons">verified</span>
+                    {{ produtor.tipoPessoa === 'juridica' ? 'Empresa Verificada pela Evence' : 'Produtor Verificado pela Evence' }}
+                  </div>
+                  <div class="prod-tipo" *ngIf="!produtor.verificado" style="color: var(--cor-texto-terciario);">
+                    <span class="material-icons">person_outline</span>
+                    {{ produtor.tipoPessoa === 'juridica' ? 'Empresa' : 'Produtor' }}
+                  </div>
+                </div>
+              </div>
+              <div class="produtor-card__body">
+                <div class="prod-stats">
+                  <div class="stat">
+                    <span class="stat-num">{{ totalEventosProdutor }}</span>
+                    <span class="stat-lbl">Eventos publicados</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<div class="lightbox" [class.active]="imagemAberta" (click)="fecharModal()">
+  <button class="lightbox__close" (click)="fecharModal()">
+    <span class="material-icons">close</span>
+  </button>
+
+  <!-- Navegação entre fotos -->
+  <button class="lightbox__nav lightbox__nav--prev" (click)="voltarImagemModal($event)" *ngIf="(evento?.imagens?.length || 0) > 1" title="Foto Anterior">
+    <span class="material-icons">chevron_left</span>
+  </button>
+  <button class="lightbox__nav lightbox__nav--next" (click)="proximaImagemModal($event)" *ngIf="(evento?.imagens?.length || 0) > 1" title="Próxima Foto">
+    <span class="material-icons">chevron_right</span>
+  </button>
+  
+  <div class="lightbox__hint" *ngIf="!zoomAtivo">
+    <span class="material-icons">zoom_in</span> Clique na imagem para ampliar
+  </div>
+
+  <div class="lightbox__container" (click)="$event.stopPropagation()">
+    <img 
+      [src]="imagemAberta" 
+      alt="Foto em tela cheia" 
+      *ngIf="imagemAberta"
+      (click)="toggleZoom($event)"
+      (mousemove)="atualizarPosicaoZoom($event)"
+      [class.zoomed]="zoomAtivo"
+      [style.transform-origin]="posicaoZoom.x + '% ' + posicaoZoom.y + '%'">
+  </div>
+</div>
+<app-footer></app-footer>

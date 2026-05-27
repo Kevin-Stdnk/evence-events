@@ -1,0 +1,167 @@
+<div class="login-page">
+
+  <!-- Painel Esquerdo — Branding -->
+  <aside class="branding-painel">
+    <div class="branding-painel__conteudo">
+
+      <a href="/" class="branding-painel__logo">
+        <span class="branding-painel__logo-icone">EE</span>
+        <span class="branding-painel__logo-texto">
+          <span>EVENCE</span>
+          <span>EVENTS</span>
+        </span>
+      </a>
+
+      <div class="branding-painel__hero">
+        <h1 class="branding-painel__titulo">
+          Experiências <br />
+          <span class="branding-painel__titulo--acento">inesquecíveis</span><br />
+          te esperam.
+        </h1>
+        <p class="branding-painel__subtitulo">
+          Acesse sua conta e descubra os melhores shows, festivais e espetáculos perto de você.
+        </p>
+      </div>
+
+      <div class="branding-painel__destaques">
+        <div class="destaque-item">
+          <span class="material-icons destaque-item__icone">confirmation_number</span>
+          <span class="destaque-item__texto">Compra 100% segura</span>
+        </div>
+        <div class="destaque-item">
+          <span class="material-icons destaque-item__icone">bolt</span>
+          <span class="destaque-item__texto">Ingressos instantâneos</span>
+        </div>
+        <div class="destaque-item">
+          <span class="material-icons destaque-item__icone">support_agent</span>
+          <span class="destaque-item__texto">Suporte 24h</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Decoração de fundo -->
+    <div class="branding-painel__deco branding-painel__deco--1"></div>
+    <div class="branding-painel__deco branding-painel__deco--2"></div>
+    <div class="branding-painel__deco branding-painel__deco--3"></div>
+  </aside>
+
+  <!-- Painel Direito — Formulário -->
+  <main class="form-painel">
+    <div class="form-painel__container">
+
+      <!-- Logo mobile (só aparece em telas pequenas) -->
+      <a href="/" class="form-painel__logo-mobile">
+        <span class="form-painel__logo-icone">EE</span>
+        <span class="form-painel__logo-texto">
+          <span>EVENCE</span>
+          <span>EVENTS</span>
+        </span>
+      </a>
+
+      <!-- Tela de sucesso -->
+      <div class="sucesso-card" *ngIf="loginSucesso">
+        <div class="sucesso-card__icone-wrap">
+          <span class="material-icons sucesso-card__icone">check_circle</span>
+        </div>
+        <h2 class="sucesso-card__titulo">Login realizado!</h2>
+        <p class="sucesso-card__texto">Redirecionando para a sua conta...</p>
+      </div>
+
+      <!-- Formulário -->
+      <div class="form-card" *ngIf="!loginSucesso">
+
+        <div class="form-card__cabecalho">
+          <h2 class="form-card__titulo">Bem-vindo de volta</h2>
+          <p class="form-card__subtitulo">Acesse sua conta Evence Events</p>
+        </div>
+
+        <!-- Erro geral -->
+        <div class="alerta-erro" *ngIf="erroGeral" role="alert">
+          <span class="material-icons alerta-erro__icone">error_outline</span>
+          <span class="alerta-erro__texto">{{ erroGeral }}</span>
+        </div>
+
+        <!-- Formulário Reativo -->
+        <form class="form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+
+          <!-- Campo E-mail -->
+          <div class="campo" [class.campo--erro]="emailInvalido" [class.campo--valido]="email.valid && email.touched">
+            <label class="campo__label" for="email">E-mail</label>
+            <div class="campo__wrapper">
+              <span class="material-icons campo__icone campo__icone--esquerda">mail_outline</span>
+              <input class="campo__input" type="email" id="email" formControlName="email" placeholder="seu@email.com"
+                autocomplete="email" [attr.aria-describedby]="emailInvalido ? 'email-erro' : null"
+                [attr.aria-invalid]="emailInvalido" />
+              <span class="material-icons campo__icone campo__icone--direita campo__icone--status"
+                *ngIf="email.touched">
+                {{ email.valid ? 'check_circle' : 'cancel' }}
+              </span>
+            </div>
+            <p class="campo__mensagem-erro" id="email-erro" *ngIf="emailInvalido" role="alert">
+              <span class="material-icons campo__mensagem-icone">info</span>
+              {{ getMensagemEmail() }}
+            </p>
+          </div>
+
+          <!-- Campo Senha -->
+          <div class="campo" [class.campo--erro]="senhaInvalida" [class.campo--valido]="senha.valid && senha.touched">
+            <div class="campo__label-row">
+              <label class="campo__label" for="senha">Senha</label>
+              <a routerLink="/esqueci-senha" class="campo__link-esqueci">Esqueceu a senha?</a>
+            </div>
+            <div class="campo__wrapper">
+              <span class="material-icons campo__icone campo__icone--esquerda">lock_outline</span>
+              <input class="campo__input" [type]="senhaVisivel ? 'text' : 'password'" id="senha" formControlName="senha"
+                placeholder="••••••••" autocomplete="current-password"
+                [attr.aria-describedby]="senhaInvalida ? 'senha-erro' : null" [attr.aria-invalid]="senhaInvalida" />
+              <button type="button" class="campo__icone campo__icone--direita campo__toggle-senha"
+                (click)="toggleSenha()" [attr.aria-label]="senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'">
+                <span class="material-icons">{{ senhaVisivel ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+            </div>
+            <p class="campo__mensagem-erro" id="senha-erro" *ngIf="senhaInvalida" role="alert">
+              <span class="material-icons campo__mensagem-icone">info</span>
+              {{ getMensagemSenha() }}
+            </p>
+          </div>
+
+          <!-- Lembrar -->
+          <div class="checkbox-row">
+            <label class="checkbox-label">
+              <input class="checkbox-label__input" type="checkbox" formControlName="lembrar" />
+              <span class="checkbox-label__custom">
+                <span class="material-icons checkbox-label__check">check</span>
+              </span>
+              <span class="checkbox-label__texto">Lembrar de mim</span>
+            </label>
+          </div>
+
+          <!-- Botão Submit -->
+          <button type="submit" class="btn-submit" [class.btn-submit--carregando]="carregando" [disabled]="carregando"
+            [attr.aria-busy]="carregando">
+            <span class="btn-submit__conteudo" *ngIf="!carregando">
+              <span class="material-icons btn-submit__icone">login</span>
+              Entrar na minha conta
+            </span>
+            <span class="btn-submit__spinner" *ngIf="carregando" aria-hidden="true">
+              <span class="spinner"></span>
+              Verificando...
+            </span>
+          </button>
+
+        </form>
+
+        <!-- Rodapé do card -->
+        <p class="form-card__rodape">
+          Não tem uma conta?
+          <a routerLink="/cadastro" class="form-card__link">Cadastre-se grátis</a>
+        </p>
+
+      </div>
+      <!-- /form-card -->
+
+    </div>
+  </main>
+
+</div>

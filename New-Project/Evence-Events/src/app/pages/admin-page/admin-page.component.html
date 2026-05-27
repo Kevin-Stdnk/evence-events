@@ -1,0 +1,676 @@
+<div class="admin-layout" *ngIf="!carregando; else loading">
+  <app-header class="admin-mobile-header"></app-header>
+
+  <!-- Sidebar de Gerenciamento -->
+  <aside class="sidebar">
+    <div class="sidebar__content">
+      <div class="sidebar__user">
+        <div class="avatar" style="overflow: hidden;">
+          <img *ngIf="usuarioLogado?.foto" [src]="usuarioLogado?.foto" alt="Avatar" class="avatar-img-sidebar">
+          <span *ngIf="!usuarioLogado?.foto">{{ usuarioLogado?.nome?.substring(0, 2)?.toUpperCase() }}</span>
+        </div>
+        <div class="sidebar__user-info">
+          <span class="user-name">{{ usuarioLogado?.nome }}</span>
+          <span class="user-role">Administrador</span>
+        </div>
+      </div>
+
+      <nav class="sidebar__nav">
+        <button class="nav-item" [class.nav-item--active]="abaAtiva === 'dashboard'" (click)="trocarAba('dashboard')">
+          <span class="material-icons">dashboard</span>
+          <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-item" [class.nav-item--active]="abaAtiva === 'aprovacoes'" (click)="trocarAba('aprovacoes')">
+          <span class="material-icons">verified_user</span>
+          <span class="nav-label">Aprovações</span>
+          <span class="nav-badge" *ngIf="stats.pendentes > 0">{{ stats.pendentes }}</span>
+        </button>
+        <button class="nav-item" [class.nav-item--active]="abaAtiva === 'eventos'" (click)="trocarAba('eventos')">
+          <span class="material-icons">event</span>
+          <span class="nav-label">Eventos</span>
+        </button>
+        <button class="nav-item" [class.nav-item--active]="abaAtiva === 'admins'" (click)="trocarAba('admins')">
+          <span class="material-icons">admin_panel_settings</span>
+          <span class="nav-label">Administradores</span>
+        </button>
+        <button class="nav-item" [class.nav-item--active]="abaAtiva === 'produtores'" (click)="trocarAba('produtores')">
+          <span class="material-icons">people_alt</span>
+          <span class="nav-label">Usuários/Produtores</span>
+        </button>
+      </nav>
+
+      <div class="sidebar__footer">
+        <a routerLink="/" class="btn-home">
+          <span class="material-icons">home</span>
+          <span class="nav-label">Voltar ao Início</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Conteúdo Principal -->
+  <main class="main-content">
+    <!-- Header do Conteúdo -->
+    <header class="content-header">
+      <div class="content-header__left">
+        <h1 class="page-title">
+          {{ abaAtiva === 'dashboard' ? 'Painel de Controle' :
+          abaAtiva === 'eventos' ? 'Gerenciar Eventos' :
+          abaAtiva === 'aprovacoes' ? 'Aprovação de Eventos' :
+          abaAtiva === 'produtores' ? 'Verificação de Produtores' : 'Equipe Administrativa' }}
+        </h1>
+        <p class="page-subtitle">Centro de curadoria e gestão da Evence Events.</p>
+      </div>
+
+      <div class="content-header__actions">
+        <div class="alert-badges">
+          <div class="alerta-sucesso" *ngIf="sucessoMensagem">
+            <span class="material-icons">check_circle</span>
+            {{ sucessoMensagem }}
+          </div>
+          <div class="alerta-erro" *ngIf="erroGeral">
+            <span class="material-icons">error_outline</span>
+            {{ erroGeral }}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD VIEW -->
+    <div class="view-container" *ngIf="abaAtiva === 'dashboard'">
+      <!-- Stats Grid Removed per user request -->
+
+
+      <section class="dashboard-row">
+        <div class="dashboard-card recent-events">
+          <div class="dashboard-card__header">
+            <h3>Solicitações Pendentes</h3>
+            <button class="btn-link" (click)="trocarAba('aprovacoes')">Ver todas</button>
+          </div>
+          <div class="dashboard-card__body">
+            <div class="recent-list">
+              <div class="recent-item" *ngFor="let sol of solicitacoes.slice(0, 5)">
+                <div class="recent-item__info">
+                  <span class="recent-item__name">{{ sol.titulo }}</span>
+                  <span class="recent-item__meta">{{ sol.cidade }} • {{ sol.local }}</span>
+                </div>
+                <div class="recent-item__actions">
+                  <button class="btn-mini btn-mini--approve" (click)="aprovarEvento(sol)">Aprovar</button>
+                </div>
+              </div>
+              <div class="empty-state-sm" *ngIf="solicitacoes.length === 0">
+                <p>Nenhuma solicitação pendente.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-card quick-actions">
+          <div class="dashboard-card__header">
+            <h3>Gerenciamento</h3>
+          </div>
+          <div class="dashboard-card__body">
+            <div class="actions-grid">
+              <button class="action-btn" (click)="trocarAba('aprovacoes')">
+                <span class="material-icons">fact_check</span>
+                Aprovações
+              </button>
+              <button class="action-btn" (click)="abrirModalCriarAdmin()">
+                <span class="material-icons">person_add</span>
+                Novo Admin
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- APROVAÇÕES VIEW -->
+    <div class="view-container" *ngIf="abaAtiva === 'aprovacoes'">
+      <div class="info-banner" *ngIf="solicitacoes.length > 0">
+        <span class="material-icons">info</span>
+        <p>Analise os detalhes de cada evento antes de aprovar para a listagem pública.</p>
+      </div>
+
+      <div class="approval-grid">
+        <div class="approval-card" *ngFor="let sol of solicitacoes">
+          <div class="approval-card__header">
+            <span class="badge-cat">{{ getNomeCategoriaExibicao(sol.categoria) }}</span>
+            <h3 class="sol-title">{{ sol.titulo }}</h3>
+          </div>
+
+          <div class="approval-card__body">
+            <div class="sol-detail">
+              <span class="material-icons">location_on</span>
+              <span>{{ sol.local }} — {{ sol.cidade }}</span>
+            </div>
+            <div class="sol-detail">
+              <span class="material-icons">calendar_today</span>
+              <span>{{ formatarData(sol.dataISO) }} às {{ sol.horario }}</span>
+            </div>
+            <div class="sol-detail">
+              <span class="material-icons">payments</span>
+              <span>A partir de {{ formatarPreco(sol.precoMinimo) }}</span>
+            </div>
+            <p class="sol-desc">{{ sol.descricaoLonga?.substring(0, 120) }}...</p>
+          </div>
+
+          <div class="approval-card__footer">
+            <a [routerLink]="['/admin/aprovacoes', sol.id]" class="btn-preview">
+              <span class="material-icons">visibility</span>
+              Visualizar
+            </a>
+            <div class="approval-card__actions">
+              <button class="btn-approve" (click)="aprovarEvento(sol)" title="Aprovar">
+                <span class="material-icons">check</span>
+              </button>
+              <button class="btn-reject" (click)="reprovarEvento(sol.id)" title="Reprovar">
+                <span class="material-icons">close</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="solicitacoes.length === 0">
+        <span class="material-icons">done_all</span>
+        <p>Tudo em dia! Nenhuma solicitação pendente no momento.</p>
+      </div>
+    </div>
+
+    <!-- EVENTOS VIEW -->
+    <div class="view-container" *ngIf="abaAtiva === 'eventos'">
+      <div class="filter-bar">
+        <div class="search-input">
+          <span class="material-icons">search</span>
+          <input type="text" placeholder="Buscar eventos ativos..." [(ngModel)]="buscaTermo"
+            (ngModelChange)="onBuscaChange()">
+        </div>
+        <select class="category-select" [(ngModel)]="categoriaFiltro" (ngModelChange)="onCategoriaChange()">
+          <option value="todas">Todas as categorias</option>
+          <option *ngFor="let cat of categorias" [value]="cat.id">{{ cat.nome }}</option>
+        </select>
+      </div>
+
+      <div class="table-container premium-scroll">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Evento</th>
+              <th>Localização</th>
+              <th>Data</th>
+              <th>Vendas</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let evento of eventosFiltrados">
+              <td data-label="Evento">
+                <div class="table-cell-event">
+                  <span class="event-name">{{ evento.titulo }}</span>
+                  <span class="event-cat">{{ getNomeCategoriaExibicao(evento.categoria) }}</span>
+                </div>
+              </td>
+              <td data-label="Localização">
+                <div class="table-cell-info">
+                  <span>{{ evento.local }}</span>
+                  <span class="subtext">{{ evento.cidade }}</span>
+                </div>
+              </td>
+              <td data-label="Data">{{ formatarData(evento.dataISO) }}</td>
+              <td data-label="Vendas">
+                <div class="vendas-progress">
+                  <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="(evento.vendidos / evento.totalIngressos) * 100"></div>
+                  </div>
+                  <span class="progress-text">{{ evento.vendidos }}/{{ evento.totalIngressos }}</span>
+                </div>
+              </td>
+              <td data-label="Status">
+                <span class="badge" [class.badge--esgotado]="evento.esgotado">
+                  {{ evento.esgotado ? 'Esgotado' : 'Ativo' }}
+                </span>
+              </td>
+              <td data-label="Ações" class="actions-cell">
+                <button class="btn-icon btn-icon--edit" (click)="abrirModalEdicao(evento)" title="Editar">
+                  <span class="material-icons">edit</span>
+                </button>
+                <button class="btn-icon btn-icon--delete" (click)="abrirConfirmacaoExclusao(evento)" title="Excluir">
+                  <span class="material-icons">delete</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ADMINS VIEW -->
+    <div class="view-container" *ngIf="abaAtiva === 'admins'">
+      <div class="filter-bar">
+        <div class="search-input">
+          <span class="material-icons">search</span>
+          <input type="text" placeholder="Buscar administradores..." [(ngModel)]="buscaUsuario"
+            (ngModelChange)="onBuscaUsuarioChange()">
+        </div>
+        <button class="btn-primary" (click)="abrirModalCriarAdmin()">
+          <span class="material-icons">add</span>
+          Novo Admin
+        </button>
+      </div>
+
+      <div class="table-container premium-scroll">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Nome / Responsável</th>
+              <th>Contato</th>
+              <th>Documento</th>
+              <th>Tipo</th>
+              <th style="text-align: center;">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of usuariosFiltrados">
+              <td data-label="Nome / Responsável">
+                <div class="user-cell">
+                  <div class="avatar-sm" style="overflow: hidden;">
+                    <img *ngIf="user.foto" [src]="user.foto" alt="Avatar" class="avatar-img-sm">
+                    <span *ngIf="!user.foto">{{ user.nome.substring(0, 2).toUpperCase() }}</span>
+                  </div>
+                  <div class="table-cell-info">
+                    <span class="main-text">{{ user.nome }}</span>
+                    <span class="subtext">Acesso Administrativo</span>
+                  </div>
+                </div>
+              </td>
+              <td data-label="Contato">
+                <div class="table-cell-info">
+                  <span>{{ user.email }}</span>
+                  <span class="subtext">{{ user.celular }}</span>
+                </div>
+              </td>
+              <td data-label="Documento">{{ user.cpf }}</td>
+              <td data-label="Tipo">
+                <span class="badge-type badge-type--admin">Admin</span>
+              </td>
+              <td data-label="Ações" class="actions-cell">
+                <button class="btn-icon btn-icon--delete" (click)="abrirConfirmacaoExclusaoAdmin(user)"
+                  [disabled]="usuarioLogado?.id === user.id" title="Remover Acesso">
+                  <span class="material-icons">person_remove</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PRODUTORES/USUÁRIOS VIEW -->
+    <div class="view-container" *ngIf="abaAtiva === 'produtores'">
+      <div class="filter-bar">
+        <div class="search-input">
+          <span class="material-icons">search</span>
+          <input type="text" placeholder="Buscar por nome, email, CPF/CNPJ..." [(ngModel)]="buscaUsuario"
+            (ngModelChange)="onBuscaUsuarioChange()">
+        </div>
+
+        <div class="filter-group">
+          <!-- Filtro Tipo de Usuário -->
+          <div class="premium-radio-group">
+            <label class="radio-item" [class.active]="filtroTipoUsuario === 'todos'">
+              <input type="radio" name="tipoAcc" [(ngModel)]="filtroTipoUsuario" value="todos"
+                (change)="onBuscaUsuarioChange()">
+              <span>Todos</span>
+            </label>
+            <label class="radio-item" [class.active]="filtroTipoUsuario === 'produtor'">
+              <input type="radio" name="tipoAcc" [(ngModel)]="filtroTipoUsuario" value="produtor"
+                (change)="onBuscaUsuarioChange()">
+              <span>Produtores</span>
+            </label>
+            <label class="radio-item" [class.active]="filtroTipoUsuario === 'usuario'">
+              <input type="radio" name="tipoAcc" [(ngModel)]="filtroTipoUsuario" value="usuario"
+                (change)="onBuscaUsuarioChange()">
+              <span>Usuários</span>
+            </label>
+          </div>
+
+          <!-- Filtro Tipo de Pessoa -->
+          <div class="premium-radio-group">
+            <label class="radio-item" [class.active]="filtroTipoPessoa === 'todos'">
+              <input type="radio" name="tipoPes" [(ngModel)]="filtroTipoPessoa" value="todos"
+                (change)="onBuscaUsuarioChange()">
+              <span>Todas</span>
+            </label>
+            <label class="radio-item" [class.active]="filtroTipoPessoa === 'fisica'">
+              <input type="radio" name="tipoPes" [(ngModel)]="filtroTipoPessoa" value="fisica"
+                (change)="onBuscaUsuarioChange()">
+              <span>Física</span>
+            </label>
+            <label class="radio-item" [class.active]="filtroTipoPessoa === 'juridica'">
+              <input type="radio" name="tipoPes" [(ngModel)]="filtroTipoPessoa" value="juridica"
+                (change)="onBuscaUsuarioChange()">
+              <span>Jurídica</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container premium-scroll">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Nome / Empresa</th>
+              <th>Contato</th>
+              <th>Documento</th>
+              <th>Tipo de Conta</th>
+              <th>Status</th>
+              <th style="text-align: center;">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of usuariosFiltrados" [class.row-suspended]="user.estaSuspenso">
+              <td data-label="Nome / Empresa">
+                <div class="user-cell">
+                  <div class="avatar-sm" [class.avatar-sm--prod]="user.isProdutor"
+                    [class.avatar-sm--suspended]="user.estaSuspenso" style="overflow: hidden;">
+                    <img *ngIf="user.foto" [src]="user.foto" alt="Avatar" class="avatar-img-sm">
+                    <span *ngIf="!user.foto">{{ (user.nomeEmpresa || user.nome).substring(0, 2).toUpperCase() }}</span>
+                  </div>
+                  <div class="table-cell-info">
+                    <div class="main-text-group">
+                      <span class="main-text">{{ user.nomeEmpresa || user.nome }}</span>
+                      <span class="badge-suspended" *ngIf="user.estaSuspenso">Suspenso</span>
+                    </div>
+                    <span class="subtext" *ngIf="user.nomeEmpresa">{{ user.nome }} (Resp.)</span>
+                  </div>
+                </div>
+              </td>
+              <td data-label="Contato">
+                <div class="table-cell-info">
+                  <span>{{ user.email }}</span>
+                  <span class="subtext">{{ user.celular }}</span>
+                </div>
+              </td>
+              <td data-label="Documento">{{ user.cnpj || user.cpf }}</td>
+              <td data-label="Tipo de Conta">
+                <div class="account-type-pill" [class.account-type-pill--prod]="user.isProdutor"
+                  [title]="user.tipoPessoa === 'juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'">
+                  <span class="material-icons">
+                    {{ user.tipoPessoa === 'juridica' ? 'business' : 'person' }}
+                  </span>
+                  <span class="pill-label">{{ user.isProdutor ? 'Produtor' : 'Usuário' }}</span>
+                </div>
+              </td>
+              <td data-label="Status">
+                <button *ngIf="user.isProdutor" class="btn-verify" [class.btn-verify--active]="user.verificado"
+                  (click)="alternarVerificacao(user)">
+                  <span class="material-icons">{{ user.verificado ? 'verified' : 'new_releases' }}</span>
+                  {{ user.verificado ? 'Verificado' : 'Pendente' }}
+                </button>
+                <span *ngIf="!user.isProdutor" class="badge-status-user">Padrão</span>
+              </td>
+              <td data-label="Ações">
+                <div class="actions-container">
+                  <button class="btn-icon" [class.btn-icon--active]="user.estaSuspenso"
+                    (click)="abrirConfirmacaoSuspensao(user)"
+                    [title]="user.estaSuspenso ? 'Reativar Conta' : 'Suspender Conta'">
+                    <span class="material-icons">{{ user.estaSuspenso ? 'play_circle' : 'pause_circle' }}</span>
+                  </button>
+                  <button class="btn-icon btn-icon--delete" (click)="abrirConfirmacaoExclusaoAdmin(user)"
+                    title="Excluir Conta">
+                    <span class="material-icons">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Edição Evento (Mesmo para Aprovar/Editar) -->
+<div class="modal-overlay" *ngIf="modalAberto" (click)="fecharModalEdicao()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <header class="modal-card__header">
+      <h2>Editar Evento</h2>
+      <button class="btn-close" (click)="fecharModalEdicao()">
+        <span class="material-icons">close</span>
+      </button>
+    </header>
+
+    <div class="modal-card__body">
+      <form [formGroup]="editarForm" class="premium-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Título do Evento</label>
+            <input type="text" formControlName="titulo">
+          </div>
+          <div class="form-group">
+            <label>Categoria</label>
+            <select formControlName="categoria">
+              <option *ngFor="let cat of categorias" [value]="cat.id">{{ cat.nome }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Local</label>
+            <input type="text" formControlName="local">
+          </div>
+          <div class="form-group">
+            <label>Cidade</label>
+            <input type="text" formControlName="cidade">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data</label>
+            <input type="date" formControlName="data">
+          </div>
+          <div class="form-group">
+            <label>Horário</label>
+            <input type="time" formControlName="horario">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Preço Base (R$)</label>
+            <input type="number" formControlName="precoMinimo">
+          </div>
+          <div class="form-group">
+            <label>Capacidade Total</label>
+            <input type="number" formControlName="totalIngressos">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Descrição Detalhada</label>
+          <textarea formControlName="descricaoLonga" rows="4"></textarea>
+        </div>
+
+        <div class="form-switches">
+          <label class="switch-container">
+            <input type="checkbox" formControlName="destaque">
+            <span class="switch-slider"></span>
+            <span class="switch-label">Destaque</span>
+          </label>
+          <label class="switch-container">
+            <input type="checkbox" formControlName="esgotado">
+            <span class="switch-slider"></span>
+            <span class="switch-label">Esgotado</span>
+          </label>
+        </div>
+      </form>
+    </div>
+
+    <footer class="modal-card__footer">
+      <button class="btn-secondary" (click)="fecharModalEdicao()">Cancelar</button>
+      <button class="btn-primary" (click)="salvarEvento()" [disabled]="editarCarregando">
+        Salvar Alterações
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- Modal Criar Admin -->
+<div class="modal-overlay" *ngIf="modalAdminAberto" (click)="fecharModalCriarAdmin()">
+  <div class="modal-card modal-card--admin" (click)="$event.stopPropagation()">
+    <header class="modal-card__header">
+      <div class="modal-header-info">
+        <!-- V4 - SELEÇÃO MÚLTIPLA E FILTRO PF -->
+        <h2>Gerenciar Equipe</h2>
+        <p>Adicione ou promova membros para a administração.</p>
+      </div>
+      <button class="btn-close" (click)="fecharModalCriarAdmin()">
+        <span class="material-icons">close</span>
+      </button>
+    </header>
+
+    <div class="modal-card__tabs">
+      <button class="tab-btn" [class.active]="tipoCadastroAdmin === 'novo'" (click)="setTipoCadastro('novo')">
+        <span class="material-icons">person_add</span>
+        Criar Novo
+      </button>
+      <button class="tab-btn" [class.active]="tipoCadastroAdmin === 'existente'" (click)="setTipoCadastro('existente')">
+        <span class="material-icons">group_add</span>
+        Adicionar Existente
+      </button>
+    </div>
+
+    <div class="modal-card__body">
+      <!-- MODO: CRIAR NOVO -->
+      <form [formGroup]="criarAdminForm" class="premium-form" *ngIf="tipoCadastroAdmin === 'novo'">
+        <div class="form-group">
+          <label>Nome Completo</label>
+          <input type="text" formControlName="nome" placeholder="Ex: João da Silva">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" formControlName="email" placeholder="email@exemplo.com">
+          </div>
+          <div class="form-group">
+            <label>CPF</label>
+            <input type="text" formControlName="cpf" placeholder="000.000.000-00">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Celular</label>
+            <input type="tel" formControlName="celular" placeholder="(00) 00000-0000">
+          </div>
+          <div class="form-group">
+            <label>Senha Provisória</label>
+            <input type="password" formControlName="senha" placeholder="No mínimo 6 caracteres">
+          </div>
+        </div>
+      </form>
+
+      <!-- MODO: ADICIONAR EXISTENTE -->
+      <div class="existente-container" *ngIf="tipoCadastroAdmin === 'existente'">
+        <div class="search-input search-input--modal">
+          <span class="material-icons">search</span>
+          <input type="text" placeholder="Buscar por nome ou email..." [(ngModel)]="buscaExistente">
+        </div>
+
+        <div class="user-selection-list premium-scroll">
+          <div class="user-selection-item" *ngFor="let user of usuariosFiltradosParaPromo"
+            [class.selected]="isUsuarioSelecionado(user.id)" (click)="toggleSelecaoUsuario(user.id)">
+            <div class="user-selection-info">
+              <div class="avatar-sm" [class.avatar-sm--prod]="user.isProdutor" style="overflow: hidden;">
+                <img *ngIf="user.foto" [src]="user.foto" alt="Avatar" class="avatar-img-sm">
+                <span *ngIf="!user.foto">{{ user.nome.substring(0, 2).toUpperCase() }}</span>
+              </div>
+              <div class="user-text">
+                <span class="user-name">{{ user.nome }}</span>
+                <span class="user-email">{{ user.email }}</span>
+              </div>
+            </div>
+            <div class="selection-indicator">
+              <span class="material-icons">
+                {{ isUsuarioSelecionado(user.id) ? 'check_circle' : 'add_circle_outline' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="usuariosFiltradosParaPromo.length === 0">
+            <span class="material-icons">person_search</span>
+            <p>Nenhum usuário elegível encontrado.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-card__footer">
+      <button class="btn-secondary" (click)="fecharModalCriarAdmin()">Cancelar</button>
+
+      <!-- Botão Criar Novo -->
+      <button *ngIf="tipoCadastroAdmin === 'novo'" class="btn-primary" (click)="criarNovoAdmin()"
+        [disabled]="criandoAdmin || criarAdminForm.invalid">
+        <span class="material-icons" *ngIf="!criandoAdmin">person_add</span>
+        {{ criandoAdmin ? 'Criando...' : 'Criar Administrador' }}
+      </button>
+
+      <!-- Botão Promover Existente (Múltiplo) -->
+      <button *ngIf="tipoCadastroAdmin === 'existente'" class="btn-primary" (click)="promoverParaAdmin()"
+        [disabled]="criandoAdmin || idsSelecionadosParaAdmin.length === 0">
+        <span class="material-icons" *ngIf="!criandoAdmin">verified_user</span>
+        {{ criandoAdmin ? 'Promovendo...' :
+        idsSelecionadosParaAdmin.length > 0 ? 'Promover (' + idsSelecionadosParaAdmin.length + ') selecionados' :
+        'Selecionar Usuários' }}
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- Modal Confirmação -->
+<div class="modal-overlay" *ngIf="confirmacaoAberta || confirmacaoAdminAberta || confirmacaoSuspensaoAberta">
+  <div class="modal-confirm">
+    <div class="confirm-icon" [class.confirm-icon--suspend]="confirmacaoSuspensaoAberta">
+      <span class="material-icons">{{ confirmacaoSuspensaoAberta ? 'block' : 'warning' }}</span>
+    </div>
+
+    <ng-container *ngIf="confirmacaoSuspensaoAberta">
+      <h2>{{ usuarioParaSuspender?.estaSuspenso ? 'Reativar Usuário?' : 'Suspender Usuário?' }}</h2>
+      <p>
+        {{ usuarioParaSuspender?.estaSuspenso ?
+        'O usuário voltará a ter acesso normal ao sistema.' :
+        'O usuário será impedido de acessar a conta até que seja reativado.' }}
+      </p>
+    </ng-container>
+
+    <ng-container *ngIf="confirmacaoAdminAberta">
+      <h2>Remover Acesso?</h2>
+      <p>Este usuário deixará de ter permissões administrativas, mas sua conta continuará ativa.</p>
+    </ng-container>
+
+    <ng-container *ngIf="confirmacaoAberta">
+      <h2>Tem certeza?</h2>
+      <p>Esta ação removerá os dados permanentemente.</p>
+    </ng-container>
+
+    <div class="confirm-actions">
+      <button class="btn-secondary"
+        (click)="fecharConfirmacaoExclusao(); fecharConfirmacaoAdmin(); fecharConfirmacaoSuspensao()">Cancelar</button>
+      <button class="btn-danger" [class.btn-warning]="confirmacaoSuspensaoAberta"
+        (click)="confirmacaoSuspensaoAberta ? confirmarSuspensaoUsuario() : (confirmacaoAberta ? confirmarExclusao() : confirmarExclusaoAdmin())">
+        {{ suspendendoUsuario ? 'Processando...' : 'Confirmar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<ng-template #loading>
+  <div class="admin-loading">
+    <div class="loader"></div>
+    <p>Atualizando painel...</p>
+  </div>
+</ng-template>
