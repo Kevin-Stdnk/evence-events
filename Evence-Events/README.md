@@ -1,59 +1,47 @@
-# EvenceEvents
+# 🚀 Evence Events - Frontend & Backend Application 🚀
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.9.
+Este diretório contém o código-fonte principal da aplicação **Evence Events**, estruturado com o framework **Angular v21** no frontend, **Tailwind CSS v4** na estilização e **JSON Server** no mockup de banco de dados e APIs REST.
 
-## Development server
+> [!IMPORTANT]
+> A documentação completa e detalhada do repositório, incluindo arquitetura de banco de dados, fluxo de telas, credenciais de teste e passo a passo detalhado está localizada na raiz do repositório.
+> 👉 **[Acessar o README.md Principal na Raiz do Repositório](../README.md)**
 
-To start a local development server, run:
+---
 
+## 🛠️ Como Executar Localmente
+
+### 1. Instalar as dependências do projeto
 ```bash
-ng serve
+npm install
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+### 2. Rodar o servidor mock da API REST (JSON Server)
+Este comando iniciará o banco de dados simulado a partir de `db.json` na porta `3000`:
 ```bash
-ng generate component component-name
+npm run backend
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
+### 3. Rodar a aplicação Angular
+Inicia o servidor de desenvolvimento do Angular:
 ```bash
-ng generate --help
+npm run start
 ```
 
-## Building
+Após a inicialização dos dois servidores, acesse o aplicativo em seu navegador através do link:
+👉 **[http://localhost:4200](http://localhost:4200)**
 
-To build the project run:
+---
 
+## 🧪 Testes Unitários com Vitest
+Para rodar a suíte de testes rápidos e robustos, execute:
 ```bash
-ng build
+npm run test
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+---
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## 📁 Estrutura deste Diretório
+* `src/app/` - Componentes, páginas, serviços e interfaces da aplicação.
+* `db.json` - Nosso banco de dados mock que alimenta as requisições HTTP locais.
+* `package.json` - Scripts de compilação, testes e dependências do projeto.
+* `tsconfig.json` - Configurações do compilador TypeScript.
