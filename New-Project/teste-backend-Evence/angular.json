@@ -2,12 +2,11 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm",
-    "analytics": false
+    "packageManager": "npm"
   },
   "newProjectRoot": "projects",
   "projects": {
-    "Evence-Events": {
+    "teste-backend-Evence": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -65,10 +64,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "Evence-Events:build:production"
+              "buildTarget": "teste-backend-Evence:build:production"
             },
             "development": {
-              "buildTarget": "Evence-Events:build:development"
+              "buildTarget": "teste-backend-Evence:build:development"
             }
           },
           "defaultConfiguration": "development"
